@@ -46,9 +46,12 @@ func uiProxyHandler(w http.ResponseWriter, r *http.Request) {
 				flog.LogFile.Println(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			} else {
-				if err := rpcCli.Call(strings.Title(pjcCfg.Name)+".Ui", r, &w); err != nil {
+				mux := http.NewServeMux()
+				if err := rpcCli.Call(strings.Title(pjcCfg.Name)+".Ui", byte(1), mux); err != nil {
 					flog.LogFile.Println(err)
 					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					mux.ServeHTTP(w, r)
 				}
 			}
 		} else {
