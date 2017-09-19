@@ -11,15 +11,17 @@ type config struct {
 	RedisUrl string
 	MongoUrl string
 	HtmlPath string
-	Project []projectConfig
+	Project []ProjectConfig
 	QiniuAK  string
 	QiniuSK  string
 	WxAppid  string
 	WxSecret string
 }
-type projectConfig struct {
+type ProjectConfig struct {
 	Name string
 	Tcp string
+	Http string
+	Proxy bool
 }
 
 var ConfigVal = &config{}
@@ -41,12 +43,13 @@ func Init() {
 	}
 }
 
-func GetProjectConfig(name string) (pCfg projectConfig) {
+func GetProjectConfig(name string) (pCfg ProjectConfig) {
 	for _, pc := range ConfigVal.Project {
 		if name == pc.Name {
 			pCfg = pc
-			break
+			return
 		}
 	}
+	// flog.LogFile.Fatal("no "+name+" project!")
 	return
 }

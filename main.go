@@ -2,28 +2,42 @@ package main
 
 import (
 	"github.com/lvfeiyang/proxy/common/flog"
-	"github.com/lvfeiyang/proxy/message"
+	// "github.com/lvfeiyang/proxy/message"
 	"github.com/lvfeiyang/proxy/common/config"
 	"net/http"
-	"net/rpc"
-	"net"
+	// "net/rpc"
+	// "net"
 	"fmt"
 	"regexp"
-	"strings"
+	// "strings"
+	"path/filepath"
+	"net/http/httputil"
+	"net/url"
 )
 
 func main() {
 	flog.Init()
 	config.Init()
+	htmlPath := config.ConfigVal.HtmlPath
 
 	//http
+	jsFiles := filepath.Join(htmlPath, "sfk", "js")
+	cssFiles := filepath.Join(htmlPath, "sfk", "css")
+	fontsFiles := filepath.Join(htmlPath, "sfk", "fonts")
+	layDateFiles := filepath.Join(htmlPath, "sfk", "laydate")
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir(jsFiles))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(cssFiles))))
+	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir(fontsFiles))))
+	http.Handle("/laydate/", http.StripPrefix("/laydate/", http.FileServer(http.Dir(layDateFiles))))
+
 	http.HandleFunc("/", uiProxyHandler)
+	// http.Handle("/", uiProxyHandler)
 	// http.HandleFunc("/msg/", msgProxyHandler)
-	http.Handle("/msg/", &message.Message{})
+	// http.Handle("/msg/", &message.Message{})
 	flog.LogFile.Fatal(http.ListenAndServe(":80", nil))
 
 	//tcp
-	ln, err := net.Listen("tcp", ":7777")
+	/*ln, err := net.Listen("tcp", ":7777")
 	if err != nil {
 		flog.LogFile.Fatal(err)
 	}
@@ -35,25 +49,18 @@ func main() {
 			continue
 		}
 		go handleConnection(conn)
-	}
+	}*/
 }
 func uiProxyHandler(w http.ResponseWriter, r *http.Request) {
 	re := regexp.MustCompile("/([^/]+)/?")
 	if ur := re.FindStringSubmatch(r.URL.Path); ur != nil {
-		pjcCfg := config.GetProjectConfig(ur[1])
-		if "" != pjcCfg.Name {
-			if rpcCli, err := rpc.Dial("tcp", pjcCfg.Tcp); err != nil {
-				flog.LogFile.Println(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			} else {
-				mux := http.NewServeMux()
-				if err := rpcCli.Call(strings.Title(pjcCfg.Name)+".Ui", byte(1), mux); err != nil {
-					flog.LogFile.Println(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-				} else {
-					mux.ServeHTTP(w, r)
-				}
+		if pjtCfg := config.GetProjectConfig(ur[1]); "" != pjtCfg.Name {
+			rpu, err := url.Parse("http://"+pjtCfg.Http)
+			if err != nil {
+				flog.LogFile.Fatal(pjtCfg.Name, "http addr error ", err)
 			}
+			rp := httputil.NewSingleHostReverseProxy(rpu)
+			rp.ServeHTTP(w, r)
 		} else {
 			fmt.Fprintf(w, "unknow url !!!")
 		}
@@ -61,7 +68,7 @@ func uiProxyHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "error url !!!")
 	}
 }
-func handleConnection(conn net.Conn) {
+/*func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	buff := make([]byte, 1024)
 	if len, err := conn.Read(buff); err != nil {
@@ -81,4 +88,4 @@ func handleConnection(conn net.Conn) {
 			}
 		}
 	}
-}
+}*/
