@@ -11,16 +11,16 @@ type config struct {
 	RedisUrl string
 	MongoUrl string
 	HtmlPath string
-	Project []ProjectConfig
+	Project  []ProjectConfig
 	QiniuAK  string
 	QiniuSK  string
 	WxAppid  string
 	WxSecret string
 }
 type ProjectConfig struct {
-	Name string
-	Tcp string
-	Http string
+	Name  string
+	Tcp   string
+	Http  string
 	Proxy bool
 }
 

@@ -3,28 +3,29 @@ package message
 import (
 	"encoding/hex"
 	"encoding/json"
+	"github.com/lvfeiyang/proxy/common/config"
 	"github.com/lvfeiyang/proxy/common/flog"
 	"github.com/lvfeiyang/proxy/common/session"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
-	"regexp"
 )
 
 type Message struct {
-	// Project string
 	Name      string
 	Data      string
 	SessionId uint64
+	Project   string
 }
 
-func GeneralServeHTTP(msg *Message, w http.ResponseWriter, r *http.Request, mmh MsgMapHandle) {
-// func (msg *Message) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (msg *Message) FromHttp(r *http.Request) {
 	re := regexp.MustCompile("/([^/]+)/msg/(.+)")
 	if ur := re.FindStringSubmatch(r.URL.Path); ur != nil {
-		// msg.Project = ur[1]
-		msg.Name = ur[2]+"-req"
+		msg.Project = ur[1]
+		msg.Name = ur[2] + "-req"
 	}
 
 	// msg.Name = r.URL.Path[len("/msg/"+project+"/"):] + "-req"
@@ -44,19 +45,58 @@ func GeneralServeHTTP(msg *Message, w http.ResponseWriter, r *http.Request, mmh 
 			flog.LogFile.Println(err)
 		}
 		msg.Data = string(buff)
-
-		sendMsg := msg.HandleMsg(mmh)
-		w.Header().Set("Content-Type", "application/json")
-		if 0 == strings.Compare("error-msg", sendMsg.Name) {
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
-		w.Write([]byte(sendMsg.Data))
 	} else {
 		// IDEA: form表单需整合为json
-		return
+		flog.LogFile.Println("http body not json")
 	}
+}
+func (msg *Message) ToHttp(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	if 0 == strings.Compare("error-msg", msg.Name) {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+	w.Write([]byte(msg.Data))
+}
+
+//TODO 异常处理
+func (msg *Message) SendToInside(tcpAddr string) *Message {
+	insMsg := &Message{Name: "error-msg", Data: UnknowError()}
+	if "" == tcpAddr {
+		if pjtCfg := config.GetProjectConfig(msg.Project); "" != pjtCfg.Name {
+			tcpAddr = pjtCfg.Tcp
+		} else {
+			flog.LogFile.Println("unknow project")
+		}
+	}
+
+	conn, err := net.Dial("tcp", tcpAddr)
+	if err != nil {
+		flog.LogFile.Println("cann't connect tcp", tcpAddr)
+	}
+	defer conn.Close()
+
+	if send, err := msg.Encode(); err != nil {
+		flog.LogFile.Println(err)
+	} else {
+		if _, err := conn.Write(send); err != nil {
+			flog.LogFile.Println(err)
+		}
+		recvData := make([]byte, 1024)
+		if n, err := conn.Read(recvData); err != nil {
+			flog.LogFile.Println(err)
+		} else {
+			insMsg.Decode(recvData[:n])
+		}
+	}
+	return insMsg
+}
+
+func GeneralServeHTTP(msg *Message, w http.ResponseWriter, r *http.Request, mmh MsgMapHandle) {
+	msg.FromHttp(r)
+	sendMsg := msg.HandleMsg(mmh)
+	sendMsg.ToHttp(w)
 }
 
 func (msg *Message) Decode(data []byte) error {
@@ -71,7 +111,6 @@ type MsgHandleIF interface {
 	Handle(sess *session.Session) ([]byte, error)
 	GetName() (string, string)
 }
-// type MMHfunc func(string) MsgHandleIF
 type MsgMapHandle map[string]MsgHandleIF
 
 func deCrypto(msgData []byte, sess *session.Session) ([]byte, error) {
@@ -118,13 +157,12 @@ func (msg *Message) HandleMsg(mmh MsgMapHandle) *Message {
 			return &Message{Name: "error-msg", Data: string(errData)}
 		}
 	}
-	// var msgIF MsgHandleIF
 	msgIF, ok := mmh[msg.Name]
 	if !ok {
 		return &Message{Name: "error-msg", Data: UnknowMsg()}
 	}
 	var msgData []byte
-	if needCrypto(msg.Name, "") {
+	if needCrypto(msg.Name, msg.Project) {
 		var err error
 		msgData, err = deCrypto([]byte(msg.Data), sess)
 		if err != nil {
