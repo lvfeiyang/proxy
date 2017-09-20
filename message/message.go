@@ -60,14 +60,14 @@ func (msg *Message) ToHttp(w http.ResponseWriter) {
 	w.Write([]byte(msg.Data))
 }
 
-//TODO 异常处理
 func (msg *Message) SendToInside(tcpAddr string) *Message {
 	insMsg := &Message{Name: "error-msg", Data: UnknowError()}
 	if "" == tcpAddr {
 		if pjtCfg := config.GetProjectConfig(msg.Project); "" != pjtCfg.Name {
 			tcpAddr = pjtCfg.Tcp
 		} else {
-			flog.LogFile.Println("unknow project")
+			// flog.LogFile.Println("unknow project")
+			insMsg = &Message{Name: "error-msg", Data: UnknowMsg()}
 		}
 	}
 
