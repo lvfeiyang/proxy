@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	// "net/http/httputil"
-	"github.com/lvfeiyang/guild/common/flog"
+	"github.com/lvfeiyang/proxy/common/flog"
 	"net/url"
 	"strings"
 	"time"
