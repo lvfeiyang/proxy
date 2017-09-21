@@ -29,7 +29,7 @@ var ConfigVal = &config{}
 func Init() {
 	var filePath string
 	if "linux" == runtime.GOOS {
-		filePath = "/root/workspace/xiaobai/config"
+		filePath = "/root/workspace/config"
 	} else {
 		filePath = "C:\\Users\\lxm19\\config" //lxm19
 	}
