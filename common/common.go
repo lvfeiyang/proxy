@@ -4,6 +4,7 @@ import (
 	"github.com/lvfeiyang/proxy/common/flog"
 	"github.com/lvfeiyang/proxy/message"
 	"net"
+	"regexp"
 )
 
 func ListenTcp(addr string, mmh message.MsgMapHandle) {
@@ -41,4 +42,19 @@ func handleConnection(conn net.Conn, mmh message.MsgMapHandle) {
 			}
 		}
 	}
+}
+
+func ImgUrlAddQn(img string) string {
+	domainMapUrl := map[string]string{
+		"xiaobai": "http://ov4dqx58l.bkt.clouddn.com",
+		"photo": "http://oz6l8jt3v.bkt.clouddn.com",
+	}
+	re := regexp.MustCompile("(.*?)/")
+	imgreg := re.FindStringSubmatch(img)
+	if imgreg != nil {
+		if url, ok := domainMapUrl[imgreg[1]]; ok {
+			return string(re.ReplaceAll([]byte(img), []byte(url+"/"))) // + "?imageView2/4/w/300/h/300"
+		}
+	}
+	return img
 }
