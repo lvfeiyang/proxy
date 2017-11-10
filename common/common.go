@@ -47,7 +47,7 @@ func handleConnection(conn net.Conn, mmh message.MsgMapHandle) {
 func ImgUrlAddQn(img string) string {
 	domainMapUrl := map[string]string{
 		"xiaobai": "http://ov4dqx58l.bkt.clouddn.com",
-		"photo": "http://oz6l8jt3v.bkt.clouddn.com",
+		"photo":   "http://oz6l8jt3v.bkt.clouddn.com",
 	}
 	re := regexp.MustCompile("(.*?)/")
 	imgreg := re.FindStringSubmatch(img)
