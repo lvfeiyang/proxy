@@ -19,6 +19,7 @@ const (
 	ErrPwdWrong
 	ErrHavenRegister
 	ErrNoUser
+	ErrParameter
 )
 
 var CodeMsgMap = map[uint32]string{
@@ -33,6 +34,7 @@ var CodeMsgMap = map[uint32]string{
 	ErrPwdWrong:       "get a wrong password",
 	ErrHavenRegister:  "mobile have been used",
 	ErrNoUser:         "have not this user",
+	ErrParameter:      "wrong parameter",
 }
 
 type ErrorMsg struct {
