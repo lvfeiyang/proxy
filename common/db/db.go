@@ -128,6 +128,9 @@ func ToMap(d interface{}) bson.M {
 		f := val.Field(i)
 		fv := f.Interface()
 		if fn := typ.Field(i).Name; fn != "Id" && fv != "" {
+			if "!Del" == fv {
+				fv = ""
+			}
 			out[strings.ToLower(fn)] = fv
 		}
 	}
