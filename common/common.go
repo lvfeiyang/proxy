@@ -58,3 +58,11 @@ func ImgUrlAddQn(img string) string {
 	}
 	return img
 }
+func Exist(list []string, item string) bool {
+	for _, i := range list {
+		if i == item {
+			return true
+		}
+	}
+	return false
+}

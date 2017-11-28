@@ -116,6 +116,19 @@ func DeleteMany(cname string, bm bson.M) error {
 	}
 	return nil
 }
+func Aggregate(cname string, bm []bson.M, data interface{}) error {
+	session, err := mgo.Dial(mongoUrl)
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	c := session.DB(dbName).C(cname)
+	if err := c.Pipe(bm).All(data); err != nil {
+		return err
+	}
+	return nil
+}
 func ToMap(d interface{}) bson.M {
 	out := bson.M{}
 	val := reflect.ValueOf(d)
