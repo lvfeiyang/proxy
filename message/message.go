@@ -83,7 +83,7 @@ func (msg *Message) SendToInside(tcpAddr string) *Message {
 		if _, err := conn.Write(send); err != nil {
 			flog.LogFile.Println(err)
 		}
-		recvData := make([]byte, 1024)
+		recvData := make([]byte, 4*1024)
 		if n, err := conn.Read(recvData); err != nil {
 			flog.LogFile.Println(err)
 		} else {

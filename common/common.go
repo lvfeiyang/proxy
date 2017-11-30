@@ -24,7 +24,7 @@ func ListenTcp(addr string, mmh message.MsgMapHandle) {
 }
 func handleConnection(conn net.Conn, mmh message.MsgMapHandle) {
 	defer conn.Close()
-	buff := make([]byte, 1024)
+	buff := make([]byte, 4*1024)
 	if len, err := conn.Read(buff); err != nil {
 		flog.LogFile.Println(err)
 	} else {
