@@ -49,3 +49,23 @@ func getBucketManager() *storage.BucketManager {
 	}
 	return storage.NewBucketManager(mac, &cfg)
 }
+func GetAllFile(bucket string) ([]string, error) {
+	var files []string
+	var marker string
+	bucketManager := getBucketManager()
+	for {
+		entries, _, nextMarker, hasNext, err := bucketManager.ListFiles(bucket, "", "", marker, 1000)
+		if err != nil {
+			return files, err
+		}
+		for _, entry := range entries {
+			files = append(files, entry.Key)
+		}
+		if hasNext {
+			marker = nextMarker
+		} else {
+			break
+		}
+	}
+	return files, nil
+}
