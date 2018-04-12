@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	_ "net/http/pprof"
 )
 
 func main() {
